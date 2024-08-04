@@ -110,7 +110,9 @@ async def play_audio(file_path):
     
 def get_current_date_string():
     current_date = datetime.now().date()
-    return current_date.strftime("%Y%m%d")
+    # %A를 사용하여 전체 요일 이름을 출력
+    day_of_week = current_date.strftime("%A")
+    return current_date.strftime("%Y%m%d") + f" ({day_of_week})"
 
 def get_current_hour_string():
     now = datetime.now()

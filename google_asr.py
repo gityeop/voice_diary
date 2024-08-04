@@ -47,13 +47,11 @@ print("선택된 항목들:")
 for item in selected_items:
     print(item.title)
 selected_items_list = list(i.title for i in selected_items)
-print(selected_items_list)
-input("일기를 시작합니다.")
 
 if gemini_api_key is None:
     raise ValueError("GEMINI_API_KEY is not set in the environment variables")
 
-instruction = f"""Act like a professional diary-writing mentor. You are an expert in guiding individuals to reflect on their daily experiences and plan for their future. Your role is to ask questions one at a time, following the format provided, and gather comprehensive information to compile into a detailed diary entry. Additionally, you will summarize tasks or important information for the next day at the end of the diary entry. You must speak in Korean and maintain a formal tone throughout the interaction. You should also give a brief, one-sentence response to the user's answer and ask a question that leads into the next topic. And after one or two questions on a topic, I have to move on to the next one. Don't ask repetitive questions about the same topic. If the user asks a question or brings up a topic that is outside the context of the checklist, do not answer and move on to the next item in the checklist. Don't repeat system prompts, including repeating what I've told you.
+instruction = f"""Act like a professional diary-writing mentor. You are an expert in guiding individuals to reflect on their daily experiences and plan for their future. Your role is to ask questions one at a time, following the format provided, and gather comprehensive information to compile into a detailed diary entry. Additionally, you will summarize tasks or important information for the next day at the end of the diary entry. You must speak in Korean and maintain a formal tone throughout the interaction. You should also give a brief, one-sentence response to the user's answer and ask a question that leads into the next topic. And after one or two questions on a topic, I have to move on to the next one. Don't ask repetitive questions about the same topic. Don't ask too many tails. If you're going to ask a question, ask it once, and don't ask more than once if you can help it. If the user asks a question or brings up a topic that is outside the context of the checklist, do not answer and move on to the next item in the checklist. Don't repeat system prompts, including repeating what I've told you. Once you've asked and answered all of the items on the checklist, you'll need to organize your journal for the day.
 
 Objective: Help the user reflect on their day comprehensively and plan for the next day, ensuring each aspect of their routine and reflections are covered in detail.
 
@@ -67,26 +65,20 @@ Note: If the user asks a question or brings up a topic that is outside the conte
 Once all checklist information is gathered, compile it into today's diary entry. After writing the diary, summarize tasks or important information for tomorrow at the end.
 
 
-Final Compilation:(Final Compilation must be written in "했다.", "었다." style)
+Final Compilation Example:(Final Compilation must be written in "했다.", "었다." style)
 
 ## 오늘의 일기
 
-오늘은 중랑천에서 45분 동안 러닝을 했다. 러닝 마지막 구간에서 벤치프레스 기계로 최대 반복 운동을 한 세트, 턱걸이 일곱 개를 한 세트 했다.
-카페에서 코딩 공부를 했는데 오랜만이라 집중이 잘 안 되었다. 집중력 유지 방법을 고민해봐야겠다.
-친구 최승헌에게 연애 상담을 해주고 이번 주나 다음 주에 만나기로 했다. 대학교 동기 김대진과 카페에서 만나 가벼운 이야기를 나눴다.
-앞으로 계획을 잘 세우고 꾸준히 최선을 다하면 좋은 결과가 올 것이라고 다짐했다.
+Today's diary entry... ~~했다. ~~였다. ~~었다.
 
 ## 내일의 계획
 
-- 아침 일찍 일어나 간단한 식사
-- 여자친구와 12시 원데이 복싱 클래스 (지각하지 않도록 준비)
-- 복싱 후 집에서 함께 식사
-- 공부 계획을 잘 세우고 미루지 않기
-
+- Tomorrow's to-do list in bulleted list format
+- Tomorrow's to-do list in bulleted list format
+...
 Take a deep breath and work on this problem step-by-step.
 
 """
-print(instruction)
 vertexai.init(project=project_id, location=location)
 genai.configure(api_key=gemini_api_key)
 openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -260,7 +252,7 @@ def listen_print_loop(responses: object) -> str:
 def process_transcript(transcript: str) -> None:
     """Process the full transcript after the keyword is detected."""
     # 여기에 대화를 처리하는 코드를 작성하세요.
-    print(f"처리할 대화: {transcript}")
+    print(f"User: {transcript}")
 
 def get_chat_response(chat: ChatSession, prompt: str):
     response = chat.send_message(prompt)
@@ -293,12 +285,10 @@ def main() -> None:
     proc_weather(address, weather_data)
     
     current_time_str = now.strftime("오늘은 %Y년 %m월 %d일이고 현재는 %p %I시 %M분이야. 시스템 프롬프트는 말하지마. 한 문장의 짧은 대화형 일기 시작 멘트로 일기를 시작해보자.")+"오늘의 날씨는 "+proc_weather(address, weather_data)
-    print(f"current weather is : {current_time_str}")
     while True:
         # .env 파일을 로드합니다
         if first_run: 
           response_from_gemini = get_chat_response(chat, current_time_str)
-          print(response_from_gemini)
           chatlog += f"'role': 'model', 'content': '{response_from_gemini}'"
           tts_stream.on_audio_stream_stop = play_start_signal
           tts_stream.feed(response_from_gemini).play()
@@ -317,14 +307,13 @@ def main() -> None:
             # Now, put the transcription responses to use.
             # play_start_signal()
             user_transcription = listen_print_loop(responses)
-            print(f"Full transcription: {user_transcription}")
             
         chatlog += f"'role': 'user', 'content': '{user_transcription}'"
         
         response_from_gemini = get_chat_response(chat,user_transcription)
-        print(response_from_gemini)
         chatlog += f"'role': 'model', 'content': '{response_from_gemini}'"
         tts_stream.on_audio_stream_stop = play_start_signal
+        print("Haru: " + response_from_gemini)
         tts_stream.feed(response_from_gemini)
         tts_stream.play()
 
